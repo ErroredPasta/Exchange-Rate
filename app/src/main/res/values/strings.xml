@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Exchange Rate</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="default_base_currency_amount">1.0</string>
+    <string name="select_a_target_currency">Select a target currency</string>
+    <string name="select_a_base_currency">Select a base currency</string>
 </resources>
