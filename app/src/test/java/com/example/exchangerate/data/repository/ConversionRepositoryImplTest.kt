@@ -5,6 +5,8 @@ import com.example.exchangerate.data.repository.response.Response
 import com.example.exchangerate.data.repository.response.malformedResponse
 import com.example.exchangerate.data.repository.response.unsupporedCodeResponse
 import com.example.exchangerate.data.repository.response.validConversionResponse
+import com.example.exchangerate.domain.exception.ConversionExceptions
+import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.rule.TestCoroutineRule
 import com.example.exchangerate.util.runCoroutineCatching
 import com.google.common.truth.Truth.assertThat
@@ -14,7 +16,6 @@ import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.*
-import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -66,11 +67,11 @@ class ConversionRepositoryImplTest {
 
         // act
         val (from, to, amount) = validRequest
-        val result = sut.convertCurrency(from = from, to = to, amount = amount)
+        val result = sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
 
         // assert
-        assertThat(result.from).isEqualTo("EUR")
-        assertThat(result.to).isEqualTo("GBP")
+        assertThat(result.from).isEqualTo(Currency.EUR)
+        assertThat(result.to).isEqualTo(Currency.GBP)
         assertThat(result.conversionResult).isEqualTo(1.7178)
     }
 
@@ -85,13 +86,13 @@ class ConversionRepositoryImplTest {
         val (from, to, amount) = unsupportedCodeRequest
 
         runCoroutineCatching {
-            sut.convertCurrency(from = from, to = to, amount = amount)
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
         }.onFailure {
-            when (it) {
-                is HttpException -> assertThat(it).hasMessageThat().contains("404")
-                else -> Assert.fail("Expected an HttpException, but $it was thrown")
-            }
-
+//            when (it) {
+//                is HttpException -> assertThat(it).hasMessageThat().contains("404")
+//                else -> Assert.fail("Expected an HttpException, but $it was thrown")
+//            }
+            assertThat(it).isEqualTo(ConversionExceptions.UnsupportedCode)
             return@runTest
         }
 
@@ -109,13 +110,9 @@ class ConversionRepositoryImplTest {
         val (from, to, amount) = malformedRequest
 
         runCoroutineCatching {
-            sut.convertCurrency(from = from, to = to, amount = amount)
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
         }.onFailure {
-            when (it) {
-                is HttpException -> assertThat(it).hasMessageThat().contains("400")
-                else -> Assert.fail("Expected an HttpException, but $it was thrown")
-            }
-
+            assertThat(it).isEqualTo(ConversionExceptions.MalformedRequest)
             return@runTest
         }
 
@@ -141,6 +138,19 @@ class ConversionRepositoryImplTest {
     private fun createMockResponse(response: Response): MockResponse = MockResponse()
         .setResponseCode(response.code)
         .setBody(response.body)
+
+    /**
+     * String을 Currency로 바꾸어주는 extension function
+     *
+     * @receiver Currency의 String
+     * @return String과 일치하는 Currency를 return,
+     * 테스트를 위해 만약 일치하는 String이 없으면 Currency.EUR을 return
+     */
+    private fun String.toCurrency() = kotlin.runCatching {
+        Currency.valueOf(this)
+    }.recover {
+        Currency.EUR
+    }.getOrThrow()
     // endregion helper methods ====================================================================
 
     // region helper classes =======================================================================
