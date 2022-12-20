@@ -1,6 +1,6 @@
 package com.example.exchangerate.data.repository.response
 
-val unsupporedCodeResponse = Response(
+val unsupportedCodeResponse = Response(
     code = 404,
     body = """
     {

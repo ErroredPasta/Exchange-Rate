@@ -3,7 +3,7 @@ package com.example.exchangerate.data.repository
 import com.example.exchangerate.data.remote.ExchangeRateApi
 import com.example.exchangerate.data.repository.response.Response
 import com.example.exchangerate.data.repository.response.malformedResponse
-import com.example.exchangerate.data.repository.response.unsupporedCodeResponse
+import com.example.exchangerate.data.repository.response.unsupportedCodeResponse
 import com.example.exchangerate.data.repository.response.validConversionResponse
 import com.example.exchangerate.domain.exception.ConversionExceptions
 import com.example.exchangerate.domain.model.Currency
@@ -79,7 +79,7 @@ class ConversionRepositoryImplTest {
     fun `convert currency, unsupported code request, throws 404 HttpException`() = runTest {
         // arrange
         mockWebServer.enqueue(
-            createMockResponse(response = unsupporedCodeResponse)
+            createMockResponse(response = unsupportedCodeResponse)
         )
 
         // act
