@@ -8,6 +8,8 @@
         <variable
             name="viewModel"
             type="com.example.exchangerate.presentation.MainViewModel" />
+
+        <import type="android.text.InputType" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -39,7 +41,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="@{viewModel.inputState.baseCurrency.name()}"
+            android:hint="@{viewModel.inputState.baseCurrency.currencyName}"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/baseCurrencyText"
             app:layout_constraintTop_toBottomOf="@id/fromTitleText">
@@ -48,7 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:onTextChanged="@{(text, start, before, count) -> viewModel.onBaseCurrencyAmountChange(text.toString())}"
-                android:text="@string/default_base_currency_amount" />
+                android:text="@{Double.toString(viewModel.inputState.baseCurrencyAmount)}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -76,7 +78,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:hint="@{viewModel.inputState.targetCurrency.name()}"
+            android:hint="@{viewModel.inputState.targetCurrency.currencyName}"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/targetCurrencyText"
             app:layout_constraintTop_toBottomOf="@id/toTitleText">
@@ -84,7 +86,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none" />
+                android:inputType="@{InputType.TYPE_NULL}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 

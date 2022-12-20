@@ -9,9 +9,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.exchangerate.R
 import com.example.exchangerate.databinding.ActivityMainBinding
+import com.example.exchangerate.domain.exception.ConversionExceptions
 import com.example.exchangerate.domain.model.Currency
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    @FlowPreview
     override fun onCreate(savedInstanceState: Bundle?) {
         mainActivityComponent.inject(this)
 
@@ -68,15 +73,40 @@ class MainActivity : AppCompatActivity() {
         setClickListeners()
 
         collectFlowWhenStarted(viewModel.conversionResultState) {
-            binding.targetCurrencyAmountTextInput.editText!!.setText(String.format("%f", it))
+            when (it) {
+                ConversionResultUiState.Loading -> {
+                    binding.targetCurrencyAmountTextInput.text = getString(R.string.loading)
+                }
+
+                is ConversionResultUiState.Success -> {
+                    binding.targetCurrencyAmountTextInput.text = String.format("%f", it.data)
+                }
+
+                is ConversionResultUiState.Error -> {
+                    handleError(throwable = it.error)
+                }
+            }
         }
     }
 
-    private fun <T> collectFlowWhenStarted(flow: Flow<T>, collector: FlowCollector<T>) {
+    private fun handleError(throwable: Throwable) = when (throwable) {
+        ConversionExceptions.MalformedRequest -> showSnackbar(message = getString(R.string.malformed_request))
+        ConversionExceptions.UnsupportedCode -> showSnackbar(message = getString(R.string.unsupported_code))
+        else -> showSnackbar(message = throwable.message ?: getString(R.string.unknown_error))
+    }
+
+
+    private fun showSnackbar(message: String, duration: Int = Snackbar.LENGTH_SHORT) {
+        Snackbar.make(
+            /* view = */ binding.root,
+            /* text = */ message,
+            /* duration = */ duration
+        ).show()
+    }
+
+    private fun <T> collectFlowWhenStarted(flow: Flow<T>, action: (T) -> Unit) {
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                flow.collect(collector)
-            }
+            repeatOnLifecycle(Lifecycle.State.STARTED) { flow.collectLatest(action) }
         }
     }
 
@@ -84,4 +114,8 @@ class MainActivity : AppCompatActivity() {
         baseCurrencyText.setOnClickListener { baseCurrencySelectionDialog.show() }
         targetCurrencyText.setOnClickListener { targetCurrencySelectionDialog.show() }
     }
+
+    private var TextInputLayout.text: String
+        get() = this.editText!!.text.toString()
+        set(value) = this.editText!!.setText(value)
 }

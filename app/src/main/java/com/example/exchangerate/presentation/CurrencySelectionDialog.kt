@@ -17,7 +17,7 @@ class CurrencySelectionDialog(
         .setNeutralButton("취소") { dialog, _ ->
             dialog.dismiss()
         }.setSingleChoiceItems(
-            items.map { "$it(${it.name})" }.toTypedArray(),
+            items.map { "$it(${it.currencyName})" }.toTypedArray(),
             defaultSelectedItemIndex
         ) { dialog, which ->
             onSelectItem(items[which])

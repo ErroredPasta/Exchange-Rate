@@ -1,9 +1,12 @@
 package com.example.exchangerate.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.domain.repository.ConversionRepository
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import javax.inject.Provider
@@ -20,13 +23,25 @@ class MainViewModel @Inject constructor(
     )
     val inputState = _inputState.asStateFlow()
 
-    val conversionResultState = _inputState.map { uiState ->
-        repository.convertCurrency(
-            from = uiState.baseCurrency,
-            to = uiState.targetCurrency,
-            amount = uiState.baseCurrencyAmount
-        ).conversionResult
-    }
+    @FlowPreview
+    val conversionResultState = inputState
+        .debounce(timeoutMillis = 300)
+        .map<ConversionInputUiState, ConversionResultUiState> { inputUiState ->
+            Log.d("TAG", "requesting: $inputUiState")
+            val result = repository.convertCurrency(
+                from = inputUiState.baseCurrency,
+                to = inputUiState.targetCurrency,
+                amount = inputUiState.baseCurrencyAmount
+            )
+
+            ConversionResultUiState.Success(data = result.conversionResult)
+        }.catch { cause ->
+            emit(ConversionResultUiState.Error(error = cause))
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = ConversionResultUiState.Loading
+        )
 
 
     fun onBaseCurrencyAmountChange(amount: String) {
@@ -58,3 +73,9 @@ data class ConversionInputUiState(
     val baseCurrencyAmount: Double = 1.0,
     val targetCurrency: Currency
 )
+
+sealed interface ConversionResultUiState {
+    object Loading : ConversionResultUiState
+    data class Success(val data: Double) : ConversionResultUiState
+    data class Error(val error: Throwable) : ConversionResultUiState
+}
