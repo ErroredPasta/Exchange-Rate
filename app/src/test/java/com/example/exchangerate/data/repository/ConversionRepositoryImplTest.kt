@@ -1,11 +1,8 @@
 package com.example.exchangerate.data.repository
 
 import com.example.exchangerate.data.remote.ExchangeRateApi
-import com.example.exchangerate.data.repository.response.Response
-import com.example.exchangerate.data.repository.response.malformedResponse
-import com.example.exchangerate.data.repository.response.unsupportedCodeResponse
-import com.example.exchangerate.data.repository.response.validConversionResponse
-import com.example.exchangerate.domain.exception.ConversionExceptions
+import com.example.exchangerate.data.repository.response.*
+import com.example.exchangerate.domain.exception.ConversionException
 import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.rule.TestCoroutineRule
 import com.example.exchangerate.util.runCoroutineCatching
@@ -67,7 +64,12 @@ class ConversionRepositoryImplTest {
 
         // act
         val (from, to, amount) = validRequest
-        val result = sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+        val result = runCoroutineCatching {
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+        }.getOrElse {
+            Assert.fail(it.toString())
+            return@runTest
+        }
 
         // assert
         assertThat(result.from).isEqualTo(Currency.EUR)
@@ -76,7 +78,7 @@ class ConversionRepositoryImplTest {
     }
 
     @Test
-    fun `convert currency, unsupported code request, throws 404 HttpException`() = runTest {
+    fun `convert currency, unsupported code request, throws UnsupportedCode exception`() = runTest {
         // arrange
         mockWebServer.enqueue(
             createMockResponse(response = unsupportedCodeResponse)
@@ -88,22 +90,19 @@ class ConversionRepositoryImplTest {
         runCoroutineCatching {
             sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
         }.onFailure {
-//            when (it) {
-//                is HttpException -> assertThat(it).hasMessageThat().contains("404")
-//                else -> Assert.fail("Expected an HttpException, but $it was thrown")
-//            }
-            assertThat(it).isEqualTo(ConversionExceptions.UnsupportedCode)
+            // assert
+            assertThat(it).isEqualTo(ConversionException.UnsupportedCode)
             return@runTest
         }
 
-        Assert.fail("Expected an HttpException, but no exception was thrown")
+        noExceptionThrown(expectedExceptionName = "UnsupportedCode")
     }
 
     @Test
-    fun `convert currency, malformed request, throws 400 HttpException`() = runTest {
+    fun `convert currency, malformed request, throws MalformedRequest exception`() = runTest {
         // arrange
         mockWebServer.enqueue(
-            createMockResponse(response = malformedResponse)
+            createMockResponse(response = malformedRequestResponse)
         )
 
         // act
@@ -112,11 +111,76 @@ class ConversionRepositoryImplTest {
         runCoroutineCatching {
             sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
         }.onFailure {
-            assertThat(it).isEqualTo(ConversionExceptions.MalformedRequest)
+            // assert
+            assertThat(it).isEqualTo(ConversionException.MalformedRequest)
             return@runTest
         }
 
-        Assert.fail("Expected an HttpException, but no exception was thrown")
+        noExceptionThrown(expectedExceptionName = "MalformedRequest")
+    }
+
+    @Test
+    fun `convert currency, request using invalid key, throws InvalidKey exception`() = runTest {
+        // arrange
+        mockWebServer.enqueue(
+            createMockResponse(response = invalidKeyResponse)
+        )
+
+        // act
+        val (from, to, amount) = validRequest
+
+        runCoroutineCatching {
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+        }.onFailure {
+            // assert
+            assertThat(it).isEqualTo(ConversionException.InvalidKey)
+            return@runTest
+        }
+
+        noExceptionThrown(expectedExceptionName = "InvalidKey")
+    }
+
+    @Test
+    fun `convert currency, when the account is inactive, throws InactiveAccount exception`() =
+        runTest {
+            // arrange
+            mockWebServer.enqueue(
+                createMockResponse(response = inactiveAccountResponse)
+            )
+
+            // act
+            val (from, to, amount) = validRequest
+
+            runCoroutineCatching {
+                sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+            }.onFailure {
+                // assert
+                assertThat(it).isEqualTo(ConversionException.InactiveAccount)
+                return@runTest
+            }
+
+            noExceptionThrown(expectedExceptionName = "InactiveAccount")
+        }
+
+    @Test
+    fun `convert currency, when quota reached, throws QuotaReached exception`() = runTest {
+        // arrange
+        mockWebServer.enqueue(
+            createMockResponse(response = quotaReachedResponse)
+        )
+
+        // act
+        val (from, to, amount) = validRequest
+
+        runCoroutineCatching {
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+        }.onFailure {
+            // assert
+            assertThat(it).isEqualTo(ConversionException.QuotaReached)
+            return@runTest
+        }
+
+        noExceptionThrown(expectedExceptionName = "QuotaReached")
     }
 
     // region helper methods =======================================================================
@@ -151,6 +215,10 @@ class ConversionRepositoryImplTest {
     }.recover {
         Currency.EUR
     }.getOrThrow()
+
+    private fun noExceptionThrown(expectedExceptionName: String) {
+        Assert.fail("Expected $expectedExceptionName exception, but no exception was thrown")
+    }
     // endregion helper methods ====================================================================
 
     // region helper classes =======================================================================

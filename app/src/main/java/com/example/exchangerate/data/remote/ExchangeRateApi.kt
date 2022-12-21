@@ -10,7 +10,7 @@ interface ExchangeRateApi {
     suspend fun convertCurrency(
         @Path("from") from: String,
         @Path("to") to: String,
-        @Path("amount") amount: Double = 1.0
+        @Path("amount") amount: String = "1.0"
     ): ConversionResultDto
 
     companion object {

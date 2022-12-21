@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.exchangerate.R
 import com.example.exchangerate.databinding.ActivityMainBinding
-import com.example.exchangerate.domain.exception.ConversionExceptions
+import com.example.exchangerate.domain.exception.ConversionException
 import com.example.exchangerate.domain.model.Currency
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
@@ -90,8 +90,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleError(throwable: Throwable) = when (throwable) {
-        ConversionExceptions.MalformedRequest -> showSnackbar(message = getString(R.string.malformed_request))
-        ConversionExceptions.UnsupportedCode -> showSnackbar(message = getString(R.string.unsupported_code))
+        ConversionException.MalformedRequest -> showSnackbar(message = getString(R.string.malformed_request))
+        ConversionException.UnsupportedCode -> showSnackbar(message = getString(R.string.unsupported_code))
         else -> showSnackbar(message = throwable.message ?: getString(R.string.unknown_error))
     }
 
