@@ -90,4 +90,11 @@ dependencies {
     // region Truth ================================================================================
     testImplementation "com.google.truth:truth:1.1.3"
     // endregion Truth =============================================================================
+
+    // region mockK ================================================================================
+    String mockkVersion = "1.13.3"
+    testImplementation "io.mockk:mockk:${mockkVersion}"
+    testImplementation "io.mockk:mockk-android:${mockkVersion}"
+    testImplementation "io.mockk:mockk-agent:${mockkVersion}"
+    // endregion mockK =============================================================================
 }

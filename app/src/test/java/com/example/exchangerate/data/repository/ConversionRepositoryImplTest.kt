@@ -4,15 +4,19 @@ import com.example.exchangerate.data.remote.ExchangeRateApi
 import com.example.exchangerate.data.repository.response.*
 import com.example.exchangerate.domain.exception.ConversionException
 import com.example.exchangerate.domain.model.Currency
+import com.example.exchangerate.domain.repository.ConversionRepository
 import com.example.exchangerate.rule.TestCoroutineRule
 import com.example.exchangerate.util.runCoroutineCatching
 import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.*
+import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -21,7 +25,7 @@ import java.util.concurrent.TimeUnit
 @ExperimentalCoroutinesApi
 class ConversionRepositoryImplTest {
 
-    private lateinit var sut: ConversionRepositoryImpl
+    private lateinit var sut: ConversionRepository
 
     @get:Rule
     val testCoroutineRule = TestCoroutineRule()
@@ -36,6 +40,7 @@ class ConversionRepositoryImplTest {
     private val validRequest = Request(from = "EUR", to = "GBP", amount = 2.0)
     private val unsupportedCodeRequest = Request(from = "EUR", to = "ABC", amount = 2.0)
     private val malformedRequest = Request(from = "EUR", to = "GBPE", amount = 2.0)
+    private val invalidAmountRequest = Request(from = "EUR", to = "GBP", amount = -1.0)
     // endregion constants =========================================================================
 
     @Before
@@ -95,7 +100,7 @@ class ConversionRepositoryImplTest {
             return@runTest
         }
 
-        noExceptionThrown(expectedExceptionName = "UnsupportedCode")
+        noExceptionThrown(expectedException = ConversionException.UnsupportedCode::class.java)
     }
 
     @Test
@@ -116,7 +121,7 @@ class ConversionRepositoryImplTest {
             return@runTest
         }
 
-        noExceptionThrown(expectedExceptionName = "MalformedRequest")
+        noExceptionThrown(expectedException = ConversionException.MalformedRequest::class.java)
     }
 
     @Test
@@ -137,7 +142,7 @@ class ConversionRepositoryImplTest {
             return@runTest
         }
 
-        noExceptionThrown(expectedExceptionName = "InvalidKey")
+        noExceptionThrown(expectedException = ConversionException.InvalidKey::class.java)
     }
 
     @Test
@@ -159,7 +164,7 @@ class ConversionRepositoryImplTest {
                 return@runTest
             }
 
-            noExceptionThrown(expectedExceptionName = "InactiveAccount")
+            noExceptionThrown(expectedException = ConversionException.InactiveAccount::class.java)
         }
 
     @Test
@@ -180,8 +185,55 @@ class ConversionRepositoryImplTest {
             return@runTest
         }
 
-        noExceptionThrown(expectedExceptionName = "QuotaReached")
+        noExceptionThrown(expectedException = ConversionException.QuotaReached::class.java)
     }
+
+    @Test
+    fun `convert currency, given invalid amount, throws 404 HttpException`() = runTest {
+        // arrange
+        mockWebServer.enqueue(
+            createMockResponse(response = invalidAmountResponse)
+        )
+
+        // act
+        val (from, to, amount) = invalidAmountRequest
+
+        runCoroutineCatching {
+            sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+        }.onFailure {
+            // assert
+            assertThat(it).isInstanceOf(HttpException::class.java)
+            assertThat(it.message).contains("404")
+            return@runTest
+        }
+
+        noExceptionThrown(expectedException = HttpException::class.java)
+    }
+
+    @Test
+    fun `convert currency, given an exception other than ConversionException, rethrows it`() =
+        runTest {
+            // arrange
+            setUpWithMock {
+                coEvery {
+                    it.convertCurrency(from = "EUR", to = "GBP", amount = String.format("%f", 2.0))
+                } throws Exception("Not a ConversionException")
+            }
+
+            // act
+            val (from, to, amount) = validRequest
+
+            runCoroutineCatching {
+                sut.convertCurrency(from = from.toCurrency(), to = to.toCurrency(), amount = amount)
+            }.onFailure {
+                // assert
+                assertThat(it).isNotInstanceOf(ConversionException::class.java)
+                assertThat(it.message).isEqualTo("Not a ConversionException")
+                return@runTest
+            }
+
+            noExceptionThrown(expectedException = Exception::class.java)
+        }
 
     // region helper methods =======================================================================
     private fun buildOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
@@ -216,8 +268,15 @@ class ConversionRepositoryImplTest {
         Currency.EUR
     }.getOrThrow()
 
-    private fun noExceptionThrown(expectedExceptionName: String) {
-        Assert.fail("Expected $expectedExceptionName exception, but no exception was thrown")
+    private fun <T> noExceptionThrown(expectedException: Class<T>) {
+        Assert.fail("Expected ${expectedException.simpleName} exception, but no exception was thrown")
+    }
+
+    private fun setUpWithMock(mockApiBehavior: (ExchangeRateApi) -> Unit) {
+        sut = ConversionRepositoryImpl(
+            api = mockk<ExchangeRateApi>().also { mockApiBehavior(it) },
+            ioDispatcher = testCoroutineRule.dispatcher
+        )
     }
     // endregion helper methods ====================================================================
 

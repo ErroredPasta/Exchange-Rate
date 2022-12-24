@@ -38,10 +38,8 @@ class ConversionRepositoryImpl @Inject constructor(
     }
 
     private fun whenHttpExceptionThrown(exception: HttpException) {
-        val body = requireNotNull(exception.response()?.errorBody()?.string()) {
-            "HttpException was thrown, but the error body is empty"
-        }
-
-        throw ConversionException.findExceptionInErrorBodyMessage(message = body) ?: exception
+        throw ConversionException.findExceptionInErrorBodyMessage(
+            message = exception.response()?.errorBody()?.string()!!
+        ) ?: exception
     }
 }
