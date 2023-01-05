@@ -1,6 +1,5 @@
 package com.example.exchangerate.presentation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -27,7 +26,6 @@ class MainViewModel @Inject constructor(
     val conversionResultState = inputState
         .debounce(timeoutMillis = 300)
         .map<ConversionInputUiState, ConversionResultUiState> { inputUiState ->
-            Log.d("TAG", "requesting: $inputUiState")
             val result = repository.convertCurrency(
                 from = inputUiState.baseCurrency,
                 to = inputUiState.targetCurrency,
