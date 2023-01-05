@@ -2,7 +2,6 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
-    id 'androidx.navigation.safeargs'
 }
 
 def localPropertiesFile = rootProject.file("local.properties")
@@ -80,12 +79,6 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:1.5.5"
     // endregion Activity, Fragment KTX ============================================================
 
-    // region Navigation ===========================================================================
-    def nav_version = "2.5.3"
-
-    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
-    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
-    // endregion Navigation ========================================================================
 
     // region Truth ================================================================================
     testImplementation "com.google.truth:truth:1.1.3"
