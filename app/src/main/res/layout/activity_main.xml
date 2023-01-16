@@ -50,7 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:onTextChanged="@{(text, start, before, count) -> viewModel.onBaseCurrencyAmountChange(text.toString())}"
-                android:text="@{Double.toString(viewModel.inputState.baseCurrencyAmount)}" />
+                android:text="@{String.format(`%f`, viewModel.inputState.baseCurrencyAmount)}" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
