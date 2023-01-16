@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.domain.repository.ConversionRepository
+import com.example.exchangerate.util.runCoroutineCatching
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
@@ -25,16 +26,8 @@ class MainViewModel @Inject constructor(
     @FlowPreview
     val conversionResultState = inputState
         .debounce(timeoutMillis = 300)
-        .map<ConversionInputUiState, ConversionResultUiState> { inputUiState ->
-            val result = repository.convertCurrency(
-                from = inputUiState.baseCurrency,
-                to = inputUiState.targetCurrency,
-                amount = inputUiState.baseCurrencyAmount
-            )
-
-            ConversionResultUiState.Success(data = result.conversionResult)
-        }.catch { cause ->
-            emit(ConversionResultUiState.Error(error = cause))
+        .map { inputUiState ->
+            tryConvertCurrency(inputUiState = inputUiState)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -54,6 +47,19 @@ class MainViewModel @Inject constructor(
     fun onTargetCurrencyChange(targetCurrency: Currency) {
         _inputState.update { it.copy(targetCurrency = targetCurrency) }
     }
+
+    private suspend fun tryConvertCurrency(inputUiState: ConversionInputUiState): ConversionResultUiState =
+        runCoroutineCatching {
+            repository.convertCurrency(
+                from = inputUiState.baseCurrency,
+                to = inputUiState.targetCurrency,
+                amount = inputUiState.baseCurrencyAmount
+            )
+        }.map { result ->
+            ConversionResultUiState.Success(data = result.conversionResult)
+        }.getOrElse { cause ->
+            ConversionResultUiState.Error(error = cause)
+        }
 
     class Factory @Inject constructor(
         private val provider: Provider<MainViewModel>
