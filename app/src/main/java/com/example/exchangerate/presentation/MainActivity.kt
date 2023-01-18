@@ -28,12 +28,6 @@ class MainActivity : AppCompatActivity() {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    private val mainActivityComponent by lazy {
-        (application as ConversionApplication).appComponent
-            .getMainActivityComponentFactory()
-            .create()
-    }
-
     private val baseCurrencySelectionDialog by lazy {
         CurrencySelectionDialog(
             context = this,
@@ -60,7 +54,10 @@ class MainActivity : AppCompatActivity() {
 
     @FlowPreview
     override fun onCreate(savedInstanceState: Bundle?) {
-        mainActivityComponent.inject(this)
+        (application as ConversionApplication).appComponent
+            .getMainActivityComponentFactory()
+            .create()
+            .inject(this)
 
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
