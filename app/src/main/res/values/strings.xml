@@ -8,4 +8,7 @@
     <string name="unknown_error">Unknown Error</string>
     <string name="malformed_request">Malformed Request Sent</string>
     <string name="unsupported_code">Unsupported Code Detected</string>
+    <string name="invalid_key">API key is invalid</string>
+    <string name="inactive_account">The account is inactive</string>
+    <string name="quota_reached">Quota reached</string>
 </resources>
