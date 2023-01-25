@@ -89,6 +89,9 @@ class MainActivity : AppCompatActivity() {
     private fun handleError(throwable: Throwable) = when (throwable) {
         ConversionException.MalformedRequest -> showSnackbar(message = getString(R.string.malformed_request))
         ConversionException.UnsupportedCode -> showSnackbar(message = getString(R.string.unsupported_code))
+        ConversionException.InvalidKey -> showSnackbar(message = getString(R.string.invalid_key))
+        ConversionException.InactiveAccount -> showSnackbar(message = getString(R.string.inactive_account))
+        ConversionException.QuotaReached -> showSnackbar(message = getString(R.string.quota_reached))
         else -> showSnackbar(message = throwable.message ?: getString(R.string.unknown_error))
     }
 
