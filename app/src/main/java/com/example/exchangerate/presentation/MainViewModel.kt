@@ -23,7 +23,7 @@ class MainViewModel @Inject constructor(
     )
     val inputState = _inputState.asStateFlow()
 
-    @FlowPreview
+    @OptIn(FlowPreview::class)
     val conversionResultState = inputState
         .debounce(timeoutMillis = 300)
         .map { inputUiState ->
