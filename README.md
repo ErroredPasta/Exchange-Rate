@@ -8,3 +8,8 @@
 - Async : Coroutine, Flow
 - Network : Retrofit2 + Gson
 - Testing : JUnit4, MockK, MockWebServer,Truth
+
+
+[Changelog]
+
+2023.05.23 : Migration from XML to Jetpack Compose done
