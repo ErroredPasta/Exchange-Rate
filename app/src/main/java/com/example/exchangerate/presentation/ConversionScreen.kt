@@ -1,6 +1,5 @@
 package com.example.exchangerate.presentation
 
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.SnackbarHostState
@@ -10,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.exchangerate.R
@@ -74,11 +74,9 @@ private fun ConversionScreenContent(
     resultUiState: ConversionResultUiState,
     onTargetCurrencyClick: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-
     Column(modifier = modifier) {
         CurrencyField(
-            title = context.getString(R.string.from),
+            title = stringResource(R.string.from),
             currency = inputUiState.baseCurrency,
             onCurrencyClick = onBaseCurrencyClick,
             amountText = "%f".format(inputUiState.baseCurrencyAmount),
@@ -87,22 +85,22 @@ private fun ConversionScreenContent(
         )
 
         CurrencyField(
-            title = context.getString(R.string.to),
+            title = stringResource(R.string.to),
             currency = inputUiState.targetCurrency,
             onCurrencyClick = onTargetCurrencyClick,
-            amountText = resultUiState.getAmountText(context = context),
+            amountText = resultUiState.amountText,
             onAmountChange = {},
             amountFieldClickable = false
         )
     }
 }
 
-
-private fun ConversionResultUiState.getAmountText(context: Context): String = when (this) {
-    ConversionResultUiState.Loading -> context.getString(R.string.loading)
-    is ConversionResultUiState.Success -> "%f".format(this.data)
-    is ConversionResultUiState.Error -> "" // error message will be shown through snackbar
-}
+private val ConversionResultUiState.amountText: String
+    @Composable get() = when (this) {
+        ConversionResultUiState.Loading -> stringResource(R.string.loading)
+        is ConversionResultUiState.Success -> "%f".format(this.data)
+        is ConversionResultUiState.Error -> "" // error message will be shown through snackbar
+    }
 
 
 @Preview(showBackground = true)
