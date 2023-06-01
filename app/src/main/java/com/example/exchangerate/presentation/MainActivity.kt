@@ -3,13 +3,13 @@ package com.example.exchangerate.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Scaffold
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.exchangerate.presentation.theme.ExchangeRateTheme
 import javax.inject.Inject
 
@@ -28,7 +28,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             ExchangeRateTheme {
                 val scaffoldState = rememberScaffoldState()
-                val viewModel by viewModels<MainViewModel> { viewModelFactory }
 
                 Scaffold(
                     scaffoldState = scaffoldState,
@@ -36,7 +35,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     ConversionScreen(
                         snackbarHostState = scaffoldState.snackbarHostState,
-                        viewModel = viewModel,
+                        viewModel = viewModel(factory = viewModelFactory),
                         modifier = Modifier.padding(it)
                     )
                 }
