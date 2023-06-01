@@ -44,7 +44,7 @@ fun ConversionScreen(
         onSelectItem = viewModel::onTargetCurrencyChange
     )
 
-    LaunchedEffect(key1 = viewModel.conversionResultState) {
+    LaunchedEffect(viewModel.conversionResultState, snackbarHostState) {
         viewModel.conversionResultState.collectLatest {
             if (it is ConversionResultUiState.Error) {
                 snackbarHostState.showSnackbar(
