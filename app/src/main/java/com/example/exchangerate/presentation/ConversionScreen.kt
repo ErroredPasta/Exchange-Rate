@@ -5,13 +5,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.exchangerate.R
 import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.presentation.theme.ExchangeRateTheme
@@ -25,8 +25,8 @@ fun ConversionScreen(
 ) {
     val context = LocalContext.current
 
-    val inputUiState by viewModel.inputState.collectAsState()
-    val resultUiState by viewModel.conversionResultState.collectAsState()
+    val inputUiState by viewModel.inputState.collectAsStateWithLifecycle()
+    val resultUiState by viewModel.conversionResultState.collectAsStateWithLifecycle()
 
     val baseCurrencySelectionDialog = CurrencySelectionDialog(
         context = context,
