@@ -15,7 +15,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.exchangerate.R
 import com.example.exchangerate.domain.model.Currency
 import com.example.exchangerate.presentation.theme.ExchangeRateTheme
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ConversionScreen(
@@ -44,13 +43,13 @@ fun ConversionScreen(
         onSelectItem = viewModel::onTargetCurrencyChange
     )
 
-    LaunchedEffect(viewModel.conversionResultState, snackbarHostState) {
-        viewModel.conversionResultState.collectLatest {
-            if (it is ConversionResultUiState.Error) {
-                snackbarHostState.showSnackbar(
-                    message = it.error.message ?: context.getString(R.string.unknown_error)
+    if (resultUiState is ConversionResultUiState.Error) {
+        LaunchedEffect(resultUiState) {
+            val errorMessage =
+                (resultUiState as ConversionResultUiState.Error).error.message ?: context.getString(
+                    R.string.unknown_error
                 )
-            }
+            snackbarHostState.showSnackbar(message = errorMessage)
         }
     }
 
